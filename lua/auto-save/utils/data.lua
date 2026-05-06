@@ -16,9 +16,9 @@ function M.not_in(var, arr)
 	end
 end
 
-function M.do_callback(callback_name)
+function M.do_callback(callback_name, ...)
 	if type(cnf.callbacks[callback_name]) == "function" then
-		cnf.callbacks[callback_name]()
+		cnf.callbacks[callback_name](...)
 	end
 end
 

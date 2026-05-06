@@ -66,7 +66,7 @@ function M.save(buf)
 		return
 	end
 
-	callback("before_saving")
+	callback("before_saving", buf)
 
 	if g.auto_save_abort == true then
 		return
@@ -80,22 +80,8 @@ function M.save(buf)
 		end)
 	end
 
-	callback("after_saving")
+	callback("after_saving", buf)
 
-	api.nvim_echo({
-		{
-			(
-				type(cnf.opts.execution_message.message) == "function" and cnf.opts.execution_message.message()
-				or cnf.opts.execution_message.message
-			),
-			AUTO_SAVE_COLOR,
-		},
-	}, true, {})
-	if cnf.opts.execution_message.cleaning_interval > 0 then
-		fn.timer_start(cnf.opts.execution_message.cleaning_interval, function()
-			cmd([[echon '']])
-		end)
-	end
 	api.nvim_echo({
 		{
 			(
