@@ -41,6 +41,11 @@ end
 local function debounce(lfn, duration)
 	local function inner_debounce()
 		local buf = api.nvim_get_current_buf()
+		-- Don't schedule a new save if we're currently saving this buffer
+		-- (prevents cascading saves from BufWritePre handlers that modify the buffer)
+		if get_buf_var(buf, "saving") then
+			return
+		end
 		if not get_buf_var(buf, "queued") then
 			vim.defer_fn(function()
 				set_buf_var(buf, "queued", false)
@@ -55,29 +60,25 @@ end
 
 function M.save(buf)
 	buf = buf or api.nvim_get_current_buf()
-	vim.notify("[auto-save DEBUG] M.save called buf=" .. tostring(buf) .. " modified=" .. tostring(api.nvim_buf_get_option(buf, "modified")), vim.log.levels.INFO)
 
 	callback("before_asserting_save")
 
-	local cond = cnf.opts.condition(buf)
-	vim.notify("[auto-save DEBUG] condition=" .. tostring(cond), vim.log.levels.INFO)
-	if cond == false then
+	if cnf.opts.condition(buf) == false then
 		return
 	end
 
 	if not api.nvim_buf_get_option(buf, "modified") then
-		vim.notify("[auto-save DEBUG] not modified, returning", vim.log.levels.INFO)
 		return
 	end
 
 	callback("before_saving", buf)
 
 	if g.auto_save_abort == true then
-		vim.notify("[auto-save DEBUG] abort=true, returning", vim.log.levels.INFO)
 		return
 	end
 
-	vim.notify("[auto-save DEBUG] writing...", vim.log.levels.INFO)
+	-- Set saving lock to prevent cascading saves from BufWritePre side-effects
+	set_buf_var(buf, "saving", true)
 	if cnf.opts.write_all_buffers then
 		cmd("silent! wall")
 	else
@@ -85,7 +86,7 @@ function M.save(buf)
 			cmd("silent! write")
 		end)
 	end
-	vim.notify("[auto-save DEBUG] write done", vim.log.levels.INFO)
+	set_buf_var(buf, "saving", false)
 
 	callback("after_saving", buf)
 
