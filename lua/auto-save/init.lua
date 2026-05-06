@@ -79,14 +79,19 @@ function M.save(buf)
 
 	-- Set saving lock to prevent cascading saves from BufWritePre side-effects
 	set_buf_var(buf, "saving", true)
-	if cnf.opts.write_all_buffers then
-		cmd("silent! wall")
-	else
-		api.nvim_buf_call(buf, function()
-			cmd("silent! write")
-		end)
-	end
+	local ok = pcall(function()
+		if cnf.opts.write_all_buffers then
+			cmd("silent! wall")
+		else
+			api.nvim_buf_call(buf, function()
+				cmd("silent! write")
+			end)
+		end
+	end)
 	set_buf_var(buf, "saving", false)
+	if not ok then
+		return
+	end
 
 	callback("after_saving", buf)
 
