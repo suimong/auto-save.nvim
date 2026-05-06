@@ -55,23 +55,29 @@ end
 
 function M.save(buf)
 	buf = buf or api.nvim_get_current_buf()
+	vim.notify("[auto-save DEBUG] M.save called buf=" .. tostring(buf) .. " modified=" .. tostring(api.nvim_buf_get_option(buf, "modified")), vim.log.levels.INFO)
 
 	callback("before_asserting_save")
 
-	if cnf.opts.condition(buf) == false then
+	local cond = cnf.opts.condition(buf)
+	vim.notify("[auto-save DEBUG] condition=" .. tostring(cond), vim.log.levels.INFO)
+	if cond == false then
 		return
 	end
 
 	if not api.nvim_buf_get_option(buf, "modified") then
+		vim.notify("[auto-save DEBUG] not modified, returning", vim.log.levels.INFO)
 		return
 	end
 
 	callback("before_saving", buf)
 
 	if g.auto_save_abort == true then
+		vim.notify("[auto-save DEBUG] abort=true, returning", vim.log.levels.INFO)
 		return
 	end
 
+	vim.notify("[auto-save DEBUG] writing...", vim.log.levels.INFO)
 	if cnf.opts.write_all_buffers then
 		cmd("silent! wall")
 	else
@@ -79,6 +85,7 @@ function M.save(buf)
 			cmd("silent! write")
 		end)
 	end
+	vim.notify("[auto-save DEBUG] write done", vim.log.levels.INFO)
 
 	callback("after_saving", buf)
 
